@@ -21,6 +21,7 @@ import com.heima.utils.thread.WmThreadLocalUtil;
 import com.heima.wemedia.mapper.WmMaterialMapper;
 import com.heima.wemedia.mapper.WmNewsMapper;
 import com.heima.wemedia.mapper.WmNewsMaterialMapper;
+import com.heima.wemedia.service.WmNewsAutoScanService;
 import com.heima.wemedia.service.WmNewsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -46,6 +47,8 @@ public class WmNewsServiceImpl  extends ServiceImpl<WmNewsMapper, WmNews> implem
     private WmMaterialMapper wmMaterialMapper;
     @Autowired
     private WmNewsMapper wmNewsMapper;
+    @Autowired
+    private WmNewsAutoScanService wmNewsAutoScanService;
 
 
     /**
@@ -103,6 +106,11 @@ public class WmNewsServiceImpl  extends ServiceImpl<WmNewsMapper, WmNews> implem
         return responseResult;
     }
 
+    /**
+     * 发布修改文章或保存为草稿
+     * @param dto
+     * @return
+     */
     @Override
     public ResponseResult submitNews(WmNewsDto dto) {
         //0.条件判断
@@ -135,7 +143,16 @@ public class WmNewsServiceImpl  extends ServiceImpl<WmNewsMapper, WmNews> implem
         saveRelativeInfoForContent(materials,wmNews.getId());
         //4.不是草稿，保存文章封面图片与素材的关系，如果当前布局是自动，需要匹配封面图片
         saveRelativeInfoForCover(dto,wmNews,materials);
-        return null;
+        //等待一秒使数据提交到数据库,以供异步审核
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        //审核
+        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }
 
     @Override
