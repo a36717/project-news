@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SpringBootTest(classes = ArticleApplication.class)
@@ -64,6 +65,7 @@ public class ArticleFreemarkerTest {
             article.setId(apArticleContent.getArticleId());
             article.setStaticUrl(path);
             apArticleMapper.updateById(article);
+            Map<String, List<String>> map=new HashMap<>();
 
         }
     }
