@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heima.common.constants.WemediaConstants;
+import com.heima.common.constants.WmNewsMessageConstants;
 import com.heima.common.exception.CustomException;
 import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.common.dtos.ResponseResult;
@@ -26,15 +27,14 @@ import com.heima.wemedia.service.WmNewsService;
 import com.heima.wemedia.service.WmNewsTaskService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,6 +52,8 @@ public class WmNewsServiceImpl  extends ServiceImpl<WmNewsMapper, WmNews> implem
     private WmNewsAutoScanService wmNewsAutoScanService;
     @Autowired
     private WmNewsTaskService wmNewsTaskService;
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
 
 
     /**
@@ -180,10 +182,33 @@ public class WmNewsServiceImpl  extends ServiceImpl<WmNewsMapper, WmNews> implem
 
     @Override
     public ResponseResult downOrUp(WmNewsDto dto) {
-        WmNews wmNews=new WmNews();
-        BeanUtils.copyProperties(dto,wmNews);
-        wmNewsMapper.updateById(wmNews);
-        return ResponseResult.okResult(wmNews);
+        //1.检查参数
+        if(dto.getId() == null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+        WmNews wmNews=getById(dto.getId());
+        if(wmNews==null)
+        {
+            return ResponseResult.errorResult(AppHttpCodeEnum.DATA_NOT_EXIST,"文章不存在");
+        }
+        //3.判断文章是否已发布
+        if(!wmNews.getStatus().equals(WmNews.Status.PUBLISHED.getCode())){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID,"当前文章不是发布状态，不能上下架");
+        }
+        //4.修改文章enable
+        if(dto.getEnable() != null && dto.getEnable() > -1 && dto.getEnable() < 2){
+            wmNews.setEnable(dto.getEnable());
+            wmNewsMapper.updateById(wmNews);
+            //发送消息，通知article端修改文章配置
+            if(wmNews.getArticleId() != null){
+                Map<String,Object> map = new HashMap<>();
+                map.put("articleId",wmNews.getArticleId());
+                map.put("enable",dto.getEnable());
+                kafkaTemplate.send(WmNewsMessageConstants.WM_NEWS_UP_OR_DOWN_TOPIC,JSON.toJSONString(map));
+            }
+        }
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }
 
     /**
