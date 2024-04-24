@@ -30,8 +30,13 @@ public class WmTokenInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         log.info("清理threadlocal...");
-        WmThreadLocalUtil.clear();
+        WmThreadLocalUtil.clear();    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+//        log.info("清理threadlocal...");
+//        WmThreadLocalUtil.clear();
     }
 }

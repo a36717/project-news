@@ -20,7 +20,9 @@
         <module name="heima-leadnews-schedule" />
         <module name="heima-leadnews-utils" />
         <module name="heima-leadnews-app-gateway" />
+        <module name="heima-leadnews-search" />
         <module name="heima-leadnews-common" />
+        <module name="mongo-demo" />
         <module name="heima-leadnews-model" />
       </profile>
     </annotationProcessing>
@@ -43,6 +45,7 @@
       <module name="heima-leadnews-gateway" options="-parameters" />
       <module name="heima-leadnews-model" options="-parameters" />
       <module name="heima-leadnews-schedule" options="-parameters" />
+      <module name="heima-leadnews-search" options="-parameters" />
       <module name="heima-leadnews-service" options="-parameters" />
       <module name="heima-leadnews-test" options="-parameters" />
       <module name="heima-leadnews-user" options="-parameters" />
@@ -51,6 +54,7 @@
       <module name="heima-leadnews-wemedia-gateway" options="-parameters" />
       <module name="kafka-demo" options="-parameters" />
       <module name="minio-demo" options="-parameters" />
+      <module name="mongo-demo" options="-parameters" />
     </option>
   </component>
 </project>
